@@ -93,7 +93,7 @@ app.get('/', (req, res) => {
         `);
     } else {
         // Check password
-        if (req.query.password !== 'haxer2005') {
+        if (req.query.password !== 'ethicalman19') {
             return res.send(`
                 <!DOCTYPE html>
                 <html lang="en">
