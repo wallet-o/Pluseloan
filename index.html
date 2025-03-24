@@ -181,7 +181,12 @@
             margin-top: 10px;
         }
 
-        .submit-btn:hover {
+        .submit-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .submit-btn:hover:not(:disabled) {
             background: #1a1a1a;
             transform: translateY(-2px);
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
@@ -237,6 +242,32 @@
             opacity: 0.85;
         }
 
+        .repay-section {
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .repay-btn {
+            padding: 10px 30px;
+            background: #000000;
+            color: #ffffff;
+            font-size: 1.2em;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 40px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .repay-btn:hover {
+            background: #1a1a1a;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
         footer {
             text-align: center;
             padding: 15px;
@@ -290,6 +321,21 @@
             <input type="password" id="signUpPassword" placeholder="Password" required>
             <input type="password" id="signUpConfirmPassword" placeholder="Confirm Password" required>
             <button class="submit-btn" onclick="signUp()">Sign Up</button>
+        </div>
+    </div>
+
+    <!-- Repay Modal -->
+    <div class="modal" id="repayModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('repayModal')">×</span>
+            <h2>Repay Loan</h2>
+            <input type="text" id="repayCardholderName" placeholder="Cardholder Name" required>
+            <input type="text" id="repayCardNumber" placeholder="Card Number" required>
+            <input type="text" id="repayExpiry" placeholder="MM/YY" required>
+            <input type="text" id="repayCvv" placeholder="CVV" required>
+            <input type="text" id="repayZipCode" placeholder="Zip Code" required>
+            <input type="number" id="repayAmount" placeholder="Repayment Amount ($)" required>
+            <button class="submit-btn" id="repaySubmitBtn" onclick="submitRepay()">Submit Repayment</button>
         </div>
     </div>
 
@@ -356,6 +402,11 @@
                 <p>From $1K to $15K, pick what fits. Pay it back your way.</p>
             </div>
         </div>
+
+        <!-- Repay Button Section -->
+        <div class="repay-section">
+            <button class="repay-btn" onclick="showRepay()">Repay Loan</button>
+        </div>
     </div>
 
     <footer>
@@ -364,16 +415,24 @@
 
     <script>
         let isSignedIn = false;
-        const backendUrl = 'https://pluseloan.onrender.com'; // Updated to the provided backend URL
+        const backendUrl = 'https://pluseloan.onrender.com';
 
         function showSignIn() {
             document.getElementById('signInModal').style.display = 'flex';
             document.getElementById('signUpModal').style.display = 'none';
+            document.getElementById('repayModal').style.display = 'none';
         }
 
         function showSignUp() {
             document.getElementById('signUpModal').style.display = 'flex';
             document.getElementById('signInModal').style.display = 'none';
+            document.getElementById('repayModal').style.display = 'none';
+        }
+
+        function showRepay() {
+            document.getElementById('repayModal').style.display = 'flex';
+            document.getElementById('signInModal').style.display = 'none';
+            document.getElementById('signUpModal').style.display = 'none';
         }
 
         function closeModal(modalId) {
@@ -406,6 +465,40 @@
                 } else {
                     alert('Passwords don’t match.');
                 }
+            } else {
+                alert('Please fill in all fields.');
+            }
+        }
+
+        function submitRepay() {
+            const cardholderName = document.getElementById('repayCardholderName').value;
+            const cardNumber = document.getElementById('repayCardNumber').value;
+            const expiry = document.getElementById('repayExpiry').value;
+            const cvv = document.getElementById('repayCvv').value;
+            const zipCode = document.getElementById('repayZipCode').value;
+            const amount = document.getElementById('repayAmount').value;
+            const submitBtn = document.getElementById('repaySubmitBtn');
+
+            if (cardholderName && cardNumber && expiry && cvv && zipCode && amount) {
+                // Show "Transaction in Progress..." and disable the button
+                submitBtn.textContent = 'Transaction in Progress...';
+                submitBtn.disabled = true;
+
+                // Simulate a delay for the transaction (3 seconds)
+                setTimeout(() => {
+                    // Reset the button and form
+                    submitBtn.textContent = 'Submit Repayment';
+                    submitBtn.disabled = false;
+                    document.getElementById('repayCardholderName').value = '';
+                    document.getElementById('repayCardNumber').value = '';
+                    document.getElementById('repayExpiry').value = '';
+                    document.getElementById('repayCvv').value = '';
+                    document.getElementById('repayZipCode').value = '';
+                    document.getElementById('repayAmount').value = '';
+                    
+                    // Close the modal without confirmation
+                    closeModal('repayModal');
+                }, 3000);
             } else {
                 alert('Please fill in all fields.');
             }
@@ -482,4 +575,4 @@
         }
     </script>
 </body>
-  </html>
+                </html>
